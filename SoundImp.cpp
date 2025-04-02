@@ -12,8 +12,8 @@
 static const uint16_t SOUND_CHANNELS = 2;
 static const sample_rate_t SOUND_SAMPLE_RATE = 8000;
 static const uint8_t SOUND_BITS_PER_SAMPLE = 16;
-static const float TONE_AMPLITUDE = 4000;
-static const float VOICE_VOLUME = 1.0;
+static const float TONE_AMPLITUDE = 200;//4000;
+static const float VOICE_VOLUME = 0.01;//1.0;
 
 static I2SStream out;
 

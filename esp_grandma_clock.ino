@@ -27,25 +27,41 @@ static void initPins() {
 
 unsigned long oldTime = 0;
 void setup() {
-  TFTImp::Init();
-
-  TFTImp::Screen.println("Beginning serial");
-  Serial.begin(115200);
-
-  TFTImp::Screen.println("Init pins");
   initPins();
 
-  TFTImp::Screen.println("Init time");
+  Serial.begin(115200);
+  //delay(1000);
+  
+  if (SleepImp::WasSleeping) {
+    esp_sleep_wakeup_cause_t wakeupCause = esp_sleep_get_wakeup_cause();
+    switch (wakeupCause) {
+      case ESP_SLEEP_WAKEUP_TIMER: {
+        TempImp::DoRead();
+        SleepImp::SetToSleep();
+        return;
+      }
+      case ESP_SLEEP_WAKEUP_EXT0: {
+        break;
+      }
+    }
+  }
+
+  TFTImp::Init();
+
+  //TFTImp::Screen.println("Init time");
   TimeImp::Init();
   
-  TFTImp::Screen.println("Init temp");
+  //TFTImp::Screen.println("Init temp");
   TempImp::Init();
 
-  TFTImp::Screen.println("Init sound");
+  //TFTImp::Screen.println("Init sound");
   SoundImp::Init();
 
-  TFTImp::Screen.println("Setting clock screen");
+  //TFTImp::Screen.println("Setting clock screen");
+
   TFTImp::SetClockScreen();
+
+  oldTime = micros();
 }
 
 void loop() {
@@ -66,9 +82,7 @@ void loop() {
   //Serial.print("DT: ");
   //Serial.println(dt);
 
-  TimeImp::AddToSyncTimer(dt);
-
-  uint8_t wakeUpStatus = SleepImp::CheckWakeUpTime();
+  /*uint8_t wakeUpStatus = SleepImp::CheckWakeUpTime();
   switch (wakeUpStatus) {
     case 1: {
       dt = 0;
@@ -80,10 +94,15 @@ void loop() {
       // When waking again, it will return here to return; and start loop
       return;
     }
-  }
+  }*/
 
   // Check button press
-  if (digitalRead(BUTTON_PIN) == LOW && !SoundImp::DoingFullReport()) {
+  if (SleepImp::WasSleeping) {
+    buttonPressed = true;
+    SoundImp::SayFullReport();
+    SleepImp::WasSleeping = false;
+  }
+  else if (digitalRead(BUTTON_PIN) == LOW && !SoundImp::DoingFullReport()) {
     if (!buttonPressed) {
       buttonDebounceTimer += dt;
       if (buttonDebounceTimer >= BUTTON_DEBOUNCE_MICROS) {
@@ -96,6 +115,8 @@ void loop() {
     buttonPressed = false;
     buttonDebounceTimer = 0;
   }
+  
+  TimeImp::AddToSyncTimer(dt);
 
   SoundImp::Update(dt);
 

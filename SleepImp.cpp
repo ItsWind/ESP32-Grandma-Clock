@@ -5,19 +5,27 @@
 #include "TempImp.h"
 #include "TimeImp.h"
 
-static bool wasSleeping = false;
+//RTC_DATA_ATTR bool wasSleeping = false;
 
 namespace SleepImp {
+  RTC_DATA_ATTR bool WasSleeping = false;
+
   void SetToSleep() {
-    wasSleeping = true;
+    //TFTImp::Screen.sleep(true);
+    WasSleeping = true;
+
     TFTImp::Screen.sleep(true);
 
-    esp_sleep_enable_timer_wakeup(15000000);
+    TimeImp::OnSleep();
+
+    gpio_deep_sleep_hold_en();
+    esp_sleep_enable_timer_wakeup(60000000);
     esp_sleep_enable_ext0_wakeup((gpio_num_t)BUTTON_PIN, LOW);
-    esp_light_sleep_start();
+    //esp_light_sleep_start();
+    esp_deep_sleep_start();
   }
 
-  uint8_t CheckWakeUpTime() {
+  /*uint8_t CheckWakeUpTime() {
     if (!wasSleeping) {
       return 0;
     }
@@ -41,5 +49,5 @@ namespace SleepImp {
     wasSleeping = false;
 
     return 1;
-  }
+  }*/
 }

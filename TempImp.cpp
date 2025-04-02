@@ -1,14 +1,20 @@
 #include "TempImp.h"
 #include "Constants.h"
+#include "SleepImp.h"
 
 #include <AM2302-Sensor.h>
 
 static AM2302::AM2302_Sensor dht{TEMP_SENSOR_PIN};
 static unsigned long dhtReadTimer = 0;
 
+RTC_DATA_ATTR float savedTemp = 0;
+RTC_DATA_ATTR float savedHumidity = 0;
+
 namespace TempImp {
   void Init() {
-    dht.begin();
+    if (!SleepImp::WasSleeping) {
+      dht.begin();
+    }
   }
 
   void Update(unsigned long dt) {
@@ -28,15 +34,23 @@ namespace TempImp {
       result = dht.read();
       tries++;
     }
+
+    if (result == 0) {
+      Serial.println("temp saved");
+      savedTemp = (dht.get_Temperature() * 9 / 5) + 32;
+      savedHumidity = dht.get_Humidity();
+    }
   }
 
   float GetTemp() {
-    float celcius = dht.get_Temperature();
+    return savedTemp;
+    /*float celcius = dht.get_Temperature();
     // return farenheit
-    return (celcius * 9 / 5) + 32;
+    return (celcius * 9 / 5) + 32;*/
   }
 
   float GetHumidity() {
-    return dht.get_Humidity();
+    return savedHumidity;
+    //return dht.get_Humidity();
   }
 }

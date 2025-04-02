@@ -5,7 +5,6 @@
 #include <TFT_eSPI.h>
 
 namespace TFTImp {
-  extern bool WasSleeping;
   extern TFT_eSPI Screen;
 
   void Init();

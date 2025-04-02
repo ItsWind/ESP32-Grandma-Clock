@@ -2,23 +2,48 @@
 #include "secrets.h"
 #include "Constants.h"
 #include "SoundImp.h"
+#include "SleepImp.h"
 
 #include <WiFi.h>
 //#include <WiFiUdp.h>
 #include <AsyncUDP.h>
 //#include <NTPClient.h>
 #include <ESP32Time.h>
+#include <time.h>
 
 static ESP32Time rtc(0); // -18000
 //static WiFiUDP ntpUDP;
 //static NTPClient timeClient(ntpUDP, "pool.ntp.org", 0, 60000);
 static AsyncUDP foolTimeUDP;
 static bool syncUDPInProgress = false;
-static uint64_t syncTimer = 0;
+
+RTC_DATA_ATTR unsigned long syncTimer = 0;
+
+RTC_DATA_ATTR unsigned long lastSavedEpoch = 0;
 
 namespace TimeImp {
+  unsigned long GetRTCEpoch() {
+    time_t now;
+    struct tm timeinfo;
+    if (!getLocalTime(&timeinfo)) {
+      //Serial.println("Failed to obtain time");
+      return 0;
+    }
+    time(&now);
+    return (unsigned long)now;
+  }
+
   void Init() {
-    SyncNTP();
+    if (!SleepImp::WasSleeping) {
+      SyncNTP();
+    }
+    else {
+      syncTimer += (GetRTCEpoch() - lastSavedEpoch) * 1000000;
+    }
+  }
+
+  void OnSleep() {
+    lastSavedEpoch = GetRTCEpoch();
   }
 
   bool ConnectWiFi() {
@@ -41,6 +66,10 @@ namespace TimeImp {
     WiFi.disconnect();
     
     setCpuFrequencyMhz(80);
+  }
+
+  unsigned long GetLastSavedEpoch() {
+    return lastSavedEpoch;
   }
 
   void AddToSyncTimer(unsigned long dt) {
@@ -78,6 +107,7 @@ namespace TimeImp {
         const uint8_t * bytes = packet.data();
         uint32_t epochReceived = (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
         rtc.setTime(epochReceived);
+        lastSavedEpoch = epochReceived;
         syncUDPInProgress = false;
       });
 

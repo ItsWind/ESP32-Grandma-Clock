@@ -45,18 +45,22 @@ static void DrawCenteredText(uint8_t size, int16_t x, int16_t y, const char * te
 }
 
 namespace TFTImp {
-  bool WasSleeping = false;
   TFT_eSPI Screen = TFT_eSPI();
 
   void Init() {
-    Screen.init();
-    Screen.setRotation(1);
-    Screen.fillScreen(TFT_BLACK);
-    Screen.setTextColor(TFT_WHITE);
-    Screen.setTextWrap(false);
-    Screen.setCursor(0, 0);
+    if (!SleepImp::WasSleeping) {
+      Screen.init();
+      Screen.setRotation(1);
+      Screen.fillScreen(TFT_BLACK);
+      Screen.setTextColor(TFT_WHITE);
+      Screen.setTextWrap(false);
+      Screen.setCursor(0, 0);
 
-    Screen.println("yo");
+      Screen.println("yo");
+    }
+    else {
+      Screen.sleep(false);
+    }
   }
 
   void Update(unsigned long dt) {
@@ -87,6 +91,10 @@ namespace TFTImp {
   }
 
   void SetClockScreen() {
+    if (SleepImp::WasSleeping) {
+      return;
+    }
+
     Screen.fillScreen(TFT_BLUE);
 
     auto halfHeight = Screen.height() / 2;
@@ -98,6 +106,8 @@ namespace TFTImp {
     Screen.drawFastHLine(20, halfHeight, 280, TFT_WHITE);
     Screen.drawFastVLine(halfWidth-1, halfHeight + 20, 80, TFT_WHITE);
     Screen.drawFastVLine(halfWidth, halfHeight + 20, 80, TFT_WHITE);
+
+    SetChangingTexts();
   }
 
   void SetChangingTexts() {
