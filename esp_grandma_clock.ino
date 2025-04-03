@@ -13,10 +13,7 @@ static void initPins() {
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   
   pinMode(SCREEN_DIM_PIN, OUTPUT);
-  analogWrite(SCREEN_DIM_PIN, 255);
-  //digitalWrite(SCREEN_DIM_PIN, HIGH);
-  //ledcAttachChannel(SCREEN_DIM_PIN, 490, 8, 15);
-  //ledcWrite(SCREEN_DIM_PIN, 255);
+  digitalWrite(SCREEN_DIM_PIN, HIGH);
   gpio_hold_dis((gpio_num_t)SCREEN_DIM_PIN);
 
   pinMode(2, OUTPUT);
@@ -33,13 +30,19 @@ void setup() {
   initPins();
 
   Serial.begin(115200);
-  //delay(1000);
+
+  TimeImp::Init();
   
   if (SleepImp::WasSleeping) {
     esp_sleep_wakeup_cause_t wakeupCause = esp_sleep_get_wakeup_cause();
     switch (wakeupCause) {
       case ESP_SLEEP_WAKEUP_TIMER: {
+        TimeImp::AddToSyncTimer(1);
+
+        TempImp::StartComm();
+        delay(2000);
         TempImp::DoRead();
+
         SleepImp::SetToSleep();
         return;
       }
@@ -49,20 +52,11 @@ void setup() {
     }
   }
 
-  TFTImp::Init();
-
-  //TFTImp::Screen.println("Init time");
-  TimeImp::Init();
-  
-  //TFTImp::Screen.println("Init temp");
   TempImp::Init();
 
-  //TFTImp::Screen.println("Init sound");
+  TFTImp::Init();
+
   SoundImp::Init();
-
-  //TFTImp::Screen.println("Setting clock screen");
-
-  TFTImp::SetClockScreen();
 
   oldTime = micros();
 }
@@ -82,28 +76,12 @@ void loop() {
   }
   oldTime = thisTime;
 
-  //Serial.print("DT: ");
-  //Serial.println(dt);
-
-  /*uint8_t wakeUpStatus = SleepImp::CheckWakeUpTime();
-  switch (wakeUpStatus) {
-    case 1: {
-      dt = 0;
-      break;
-    }
-    case 2: {
-      // Skip rest of loop if wake up is due to wakeup timer
-      // Wakeup timer will set to sleep again immediately after
-      // When waking again, it will return here to return; and start loop
-      return;
-    }
-  }*/
-
   // Check button press
   if (SleepImp::WasSleeping) {
+    SleepImp::WasSleeping = false;
+
     buttonPressed = true;
     SoundImp::SayFullReport();
-    SleepImp::WasSleeping = false;
   }
   else if (digitalRead(BUTTON_PIN) == LOW && !SoundImp::DoingFullReport()) {
     if (!buttonPressed) {

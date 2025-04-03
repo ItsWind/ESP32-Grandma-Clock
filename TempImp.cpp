@@ -13,7 +13,7 @@ RTC_DATA_ATTR float savedHumidity = 0;
 namespace TempImp {
   void Init() {
     if (!SleepImp::WasSleeping) {
-      dht.begin();
+      StartComm();
     }
   }
 
@@ -23,6 +23,10 @@ namespace TempImp {
 
       DoRead();
     }
+  }
+
+  void StartComm() {
+    dht.begin();
   }
 
   void DoRead() {
@@ -45,13 +49,9 @@ namespace TempImp {
 
   float GetTemp() {
     return savedTemp;
-    /*float celcius = dht.get_Temperature();
-    // return farenheit
-    return (celcius * 9 / 5) + 32;*/
   }
 
   float GetHumidity() {
     return savedHumidity;
-    //return dht.get_Humidity();
   }
 }

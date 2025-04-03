@@ -5,15 +5,11 @@
 #include "SleepImp.h"
 
 #include <WiFi.h>
-//#include <WiFiUdp.h>
 #include <AsyncUDP.h>
-//#include <NTPClient.h>
 #include <ESP32Time.h>
 #include <time.h>
 
 static ESP32Time rtc(0); // -18000
-//static WiFiUDP ntpUDP;
-//static NTPClient timeClient(ntpUDP, "pool.ntp.org", 0, 60000);
 static AsyncUDP foolTimeUDP;
 static bool syncUDPInProgress = false;
 
@@ -21,18 +17,18 @@ RTC_DATA_ATTR unsigned long syncTimer = 0;
 
 RTC_DATA_ATTR unsigned long lastSavedEpoch = 0;
 
-namespace TimeImp {
-  unsigned long GetRTCEpoch() {
-    time_t now;
-    struct tm timeinfo;
-    if (!getLocalTime(&timeinfo)) {
-      //Serial.println("Failed to obtain time");
-      return 0;
-    }
-    time(&now);
-    return (unsigned long)now;
+static unsigned long GetRTCEpoch() {
+  time_t now;
+  struct tm timeinfo;
+  if (!getLocalTime(&timeinfo)) {
+    //Serial.println("Failed to obtain time");
+    return 0;
   }
+  time(&now);
+  return (unsigned long)now;
+}
 
+namespace TimeImp {
   void Init() {
     if (!SleepImp::WasSleeping) {
       SyncNTP();
@@ -68,10 +64,6 @@ namespace TimeImp {
     setCpuFrequencyMhz(80);
   }
 
-  unsigned long GetLastSavedEpoch() {
-    return lastSavedEpoch;
-  }
-
   void AddToSyncTimer(unsigned long dt) {
     syncTimer += (uint64_t)dt;
     if (syncTimer >= TIME_SYNC_TIMER_MAX) {
@@ -90,13 +82,11 @@ namespace TimeImp {
 
     if (WiFi.status() != WL_CONNECTED) {
       if (!ConnectWiFi()) {
-        // TO-DO: If wifi connection failed
         DisconnectWiFi();
         Serial.println("Wifi failed");
         return;
       }
     }
-    //timeClient.begin();
     Serial.println("Wifi connected");
 
     if (foolTimeUDP.connect(IPAddress(54,39,21,229), 40556)) {
@@ -107,7 +97,6 @@ namespace TimeImp {
         const uint8_t * bytes = packet.data();
         uint32_t epochReceived = (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
         rtc.setTime(epochReceived);
-        lastSavedEpoch = epochReceived;
         syncUDPInProgress = false;
       });
 
@@ -134,25 +123,6 @@ namespace TimeImp {
     else {
       Serial.println("UDP failed");
     }
-
-    /*bool rtcSyncSuccess = timeClient.forceUpdate();
-    uint8_t tries = 0;
-    while (!rtcSyncSuccess && tries < 255) {
-      rtcSyncSuccess = timeClient.forceUpdate();
-      tries++;
-    }
-
-    if (rtcSyncSuccess) {
-      Serial.println("time client updated");
-      
-      rtc.setTime(timeClient.getEpochTime());
-      Serial.println("RTC synced");
-    }
-    else {
-      Serial.println("RTC sync failed");
-    }
-
-    timeClient.end();*/
     
     DisconnectWiFi();
     Serial.println("Wifi disconnected");

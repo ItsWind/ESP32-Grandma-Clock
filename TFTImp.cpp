@@ -48,20 +48,13 @@ namespace TFTImp {
   TFT_eSPI Screen = TFT_eSPI();
 
   void Init() {
-    //if (!SleepImp::WasSleeping) {
-      Screen.init();
-      Screen.setRotation(1);
-      //Screen.fillScreen(TFT_BLACK);
-      Screen.setTextColor(TFT_WHITE);
-      Screen.setTextWrap(false);
-      SetClockScreen();
-      //Screen.setCursor(0, 0);
+    Screen.init();
+    Screen.setRotation(1);
+    Screen.setTextColor(TFT_WHITE);
+    Screen.setTextWrap(false);
 
-      //Screen.println("yo");
-    //}
-    //else {
-    //  Screen.sleep(false);
-    //}
+    SetClockScreen();
+    SetChangingTexts();
   }
 
   void Update(unsigned long dt) {
