@@ -118,7 +118,7 @@ namespace TimeImp {
         const uint8_t requestBytes[] = {1};
         foolTimeUDP.write(requestBytes, 1);
         tries++;
-        delay(100);
+        delay(500);
       }
 
       if (syncUDPInProgress) {

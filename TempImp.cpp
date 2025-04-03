@@ -31,6 +31,7 @@ namespace TempImp {
     auto result = dht.read();
     uint8_t tries = 0;
     while (result != 0 && tries < 255) {
+      Serial.println("temp read attempt");
       result = dht.read();
       tries++;
     }

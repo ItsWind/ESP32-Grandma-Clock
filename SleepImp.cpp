@@ -18,8 +18,8 @@ namespace SleepImp {
 
     TimeImp::OnSleep();
 
-    gpio_deep_sleep_hold_en();
-    esp_sleep_enable_timer_wakeup(60000000);
+    gpio_hold_en((gpio_num_t)SCREEN_DIM_PIN);
+    esp_sleep_enable_timer_wakeup(15000000);
     esp_sleep_enable_ext0_wakeup((gpio_num_t)BUTTON_PIN, LOW);
     //esp_light_sleep_start();
     esp_deep_sleep_start();

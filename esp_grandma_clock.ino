@@ -13,8 +13,11 @@ static void initPins() {
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   
   pinMode(SCREEN_DIM_PIN, OUTPUT);
-  ledcAttachChannel(SCREEN_DIM_PIN, 490, 8, 15);
-  ledcWrite(SCREEN_DIM_PIN, 0);
+  analogWrite(SCREEN_DIM_PIN, 255);
+  //digitalWrite(SCREEN_DIM_PIN, HIGH);
+  //ledcAttachChannel(SCREEN_DIM_PIN, 490, 8, 15);
+  //ledcWrite(SCREEN_DIM_PIN, 255);
+  gpio_hold_dis((gpio_num_t)SCREEN_DIM_PIN);
 
   pinMode(2, OUTPUT);
   ledcAttachChannel(2, 490, 8, 13);

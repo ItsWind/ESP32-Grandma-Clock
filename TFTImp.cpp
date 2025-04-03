@@ -20,7 +20,7 @@ static void setScreenDim(uint8_t pwm) {
     return;
   }
 
-  ledcWrite(SCREEN_DIM_PIN, pwm);
+  analogWrite(SCREEN_DIM_PIN, pwm);
   lastSetScreenDimPWM = pwm;
   //delay(1);
 }
@@ -48,19 +48,20 @@ namespace TFTImp {
   TFT_eSPI Screen = TFT_eSPI();
 
   void Init() {
-    if (!SleepImp::WasSleeping) {
+    //if (!SleepImp::WasSleeping) {
       Screen.init();
       Screen.setRotation(1);
-      Screen.fillScreen(TFT_BLACK);
+      //Screen.fillScreen(TFT_BLACK);
       Screen.setTextColor(TFT_WHITE);
       Screen.setTextWrap(false);
-      Screen.setCursor(0, 0);
+      SetClockScreen();
+      //Screen.setCursor(0, 0);
 
-      Screen.println("yo");
-    }
-    else {
-      Screen.sleep(false);
-    }
+      //Screen.println("yo");
+    //}
+    //else {
+    //  Screen.sleep(false);
+    //}
   }
 
   void Update(unsigned long dt) {
