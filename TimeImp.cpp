@@ -2,23 +2,44 @@
 #include "secrets.h"
 #include "Constants.h"
 #include "SoundImp.h"
+#include "SleepImp.h"
 
 #include <WiFi.h>
-//#include <WiFiUdp.h>
 #include <AsyncUDP.h>
-//#include <NTPClient.h>
 #include <ESP32Time.h>
+#include <time.h>
 
 static ESP32Time rtc(0); // -18000
-//static WiFiUDP ntpUDP;
-//static NTPClient timeClient(ntpUDP, "pool.ntp.org", 0, 60000);
 static AsyncUDP foolTimeUDP;
 static bool syncUDPInProgress = false;
-static uint64_t syncTimer = 0;
+
+RTC_DATA_ATTR unsigned long syncTimer = 0;
+
+RTC_DATA_ATTR unsigned long lastSavedEpoch = 0;
+
+static unsigned long GetRTCEpoch() {
+  time_t now;
+  struct tm timeinfo;
+  if (!getLocalTime(&timeinfo)) {
+    //Serial.println("Failed to obtain time");
+    return 0;
+  }
+  time(&now);
+  return (unsigned long)now;
+}
 
 namespace TimeImp {
   void Init() {
-    SyncNTP();
+    if (!SleepImp::WasSleeping) {
+      SyncNTP();
+    }
+    else {
+      syncTimer += (GetRTCEpoch() - lastSavedEpoch) * 1000000;
+    }
+  }
+
+  void OnSleep() {
+    lastSavedEpoch = GetRTCEpoch();
   }
 
   bool ConnectWiFi() {
@@ -61,13 +82,11 @@ namespace TimeImp {
 
     if (WiFi.status() != WL_CONNECTED) {
       if (!ConnectWiFi()) {
-        // TO-DO: If wifi connection failed
         DisconnectWiFi();
         Serial.println("Wifi failed");
         return;
       }
     }
-    //timeClient.begin();
     Serial.println("Wifi connected");
 
     if (foolTimeUDP.connect(IPAddress(54,39,21,229), 40556)) {
@@ -88,7 +107,7 @@ namespace TimeImp {
         const uint8_t requestBytes[] = {1};
         foolTimeUDP.write(requestBytes, 1);
         tries++;
-        delay(100);
+        delay(500);
       }
 
       if (syncUDPInProgress) {
@@ -104,25 +123,6 @@ namespace TimeImp {
     else {
       Serial.println("UDP failed");
     }
-
-    /*bool rtcSyncSuccess = timeClient.forceUpdate();
-    uint8_t tries = 0;
-    while (!rtcSyncSuccess && tries < 255) {
-      rtcSyncSuccess = timeClient.forceUpdate();
-      tries++;
-    }
-
-    if (rtcSyncSuccess) {
-      Serial.println("time client updated");
-      
-      rtc.setTime(timeClient.getEpochTime());
-      Serial.println("RTC synced");
-    }
-    else {
-      Serial.println("RTC sync failed");
-    }
-
-    timeClient.end();*/
     
     DisconnectWiFi();
     Serial.println("Wifi disconnected");

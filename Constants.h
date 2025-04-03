@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 
+const uint64_t TEMP_CHECK_SLEEP_TIMER = 120000000;
 const uint64_t TIME_SYNC_TIMER_MAX = 3600000000;
 
 const uint8_t SPEAKER_DOUT_PIN = 33;

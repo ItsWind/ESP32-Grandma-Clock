@@ -13,8 +13,8 @@ static void initPins() {
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   
   pinMode(SCREEN_DIM_PIN, OUTPUT);
-  ledcAttachChannel(SCREEN_DIM_PIN, 490, 8, 15);
-  ledcWrite(SCREEN_DIM_PIN, 0);
+  digitalWrite(SCREEN_DIM_PIN, HIGH);
+  gpio_hold_dis((gpio_num_t)SCREEN_DIM_PIN);
 
   pinMode(2, OUTPUT);
   ledcAttachChannel(2, 490, 8, 13);
@@ -27,25 +27,38 @@ static void initPins() {
 
 unsigned long oldTime = 0;
 void setup() {
-  TFTImp::Init();
-
-  TFTImp::Screen.println("Beginning serial");
-  Serial.begin(115200);
-
-  TFTImp::Screen.println("Init pins");
   initPins();
 
-  TFTImp::Screen.println("Init time");
+  Serial.begin(115200);
+
   TimeImp::Init();
   
-  TFTImp::Screen.println("Init temp");
+  if (SleepImp::WasSleeping) {
+    esp_sleep_wakeup_cause_t wakeupCause = esp_sleep_get_wakeup_cause();
+    switch (wakeupCause) {
+      case ESP_SLEEP_WAKEUP_TIMER: {
+        TimeImp::AddToSyncTimer(1);
+
+        TempImp::StartComm();
+        delay(2000);
+        TempImp::DoRead();
+
+        SleepImp::SetToSleep();
+        return;
+      }
+      case ESP_SLEEP_WAKEUP_EXT0: {
+        break;
+      }
+    }
+  }
+
   TempImp::Init();
 
-  TFTImp::Screen.println("Init sound");
+  TFTImp::Init();
+
   SoundImp::Init();
 
-  TFTImp::Screen.println("Setting clock screen");
-  TFTImp::SetClockScreen();
+  oldTime = micros();
 }
 
 void loop() {
@@ -63,27 +76,14 @@ void loop() {
   }
   oldTime = thisTime;
 
-  //Serial.print("DT: ");
-  //Serial.println(dt);
-
-  TimeImp::AddToSyncTimer(dt);
-
-  uint8_t wakeUpStatus = SleepImp::CheckWakeUpTime();
-  switch (wakeUpStatus) {
-    case 1: {
-      dt = 0;
-      break;
-    }
-    case 2: {
-      // Skip rest of loop if wake up is due to wakeup timer
-      // Wakeup timer will set to sleep again immediately after
-      // When waking again, it will return here to return; and start loop
-      return;
-    }
-  }
-
   // Check button press
-  if (digitalRead(BUTTON_PIN) == LOW && !SoundImp::DoingFullReport()) {
+  if (SleepImp::WasSleeping) {
+    SleepImp::WasSleeping = false;
+
+    buttonPressed = true;
+    SoundImp::SayFullReport();
+  }
+  else if (digitalRead(BUTTON_PIN) == LOW && !SoundImp::DoingFullReport()) {
     if (!buttonPressed) {
       buttonDebounceTimer += dt;
       if (buttonDebounceTimer >= BUTTON_DEBOUNCE_MICROS) {
@@ -96,6 +96,8 @@ void loop() {
     buttonPressed = false;
     buttonDebounceTimer = 0;
   }
+  
+  TimeImp::AddToSyncTimer(dt);
 
   SoundImp::Update(dt);
 

@@ -4,6 +4,7 @@
 
 namespace TimeImp {
   void Init();
+  void OnSleep();
   bool ConnectWiFi();
   void DisconnectWiFi();
   void AddToSyncTimer(unsigned long dt);
