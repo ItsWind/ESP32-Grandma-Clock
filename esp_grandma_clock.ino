@@ -11,14 +11,10 @@ static unsigned long buttonDebounceTimer = 0;
 
 static void initPins() {
   pinMode(BUTTON_PIN, INPUT_PULLUP);
-  
-  pinMode(SCREEN_DIM_PIN, OUTPUT);
-  digitalWrite(SCREEN_DIM_PIN, HIGH);
-  gpio_hold_dis((gpio_num_t)SCREEN_DIM_PIN);
 
-  pinMode(2, OUTPUT);
-  ledcAttachChannel(2, 490, 8, 13);
-  ledcWrite(2, 0);
+  pinMode(SCREEN_DIM_PIN, OUTPUT);
+  ledcAttachChannel(SCREEN_DIM_PIN, 490, 8, 15);
+  ledcWrite(SCREEN_DIM_PIN, 0);
 
   pinMode(BLUE_LED_PIN, OUTPUT);
   ledcAttachChannel(BLUE_LED_PIN, 490, 8, 14);

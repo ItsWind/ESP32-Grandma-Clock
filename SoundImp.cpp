@@ -33,7 +33,6 @@ static void setLEDPWM(uint8_t pwm) {
   }
 
   ledcWrite(BLUE_LED_PIN, pwm);
-  ledcWrite(2, pwm);
   lastSetLEDPWM = pwm;
   //delay(1);
 }
@@ -52,6 +51,7 @@ namespace SoundImp {
     cfg.pin_data = SPEAKER_DOUT_PIN;
 
     out.begin(cfg);
+    delay(50);
 
     voice.setVolume(VOICE_VOLUME);
   }

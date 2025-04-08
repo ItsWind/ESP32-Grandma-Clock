@@ -20,7 +20,7 @@ static void setScreenDim(uint8_t pwm) {
     return;
   }
 
-  analogWrite(SCREEN_DIM_PIN, pwm);
+  ledcWrite(SCREEN_DIM_PIN, pwm);
   lastSetScreenDimPWM = pwm;
   //delay(1);
 }
@@ -67,7 +67,7 @@ namespace TFTImp {
     if (screenDimTimer < SCREEN_FADE_TIME) {
       screenDimTimer += dt;
       if (screenDimTimer >= SCREEN_FADE_TIME) {
-        setScreenDim(255);
+        setScreenDim(0);
         //screenDimTimer = 15000000;
         screenDimTimer = 0;
         
@@ -75,7 +75,10 @@ namespace TFTImp {
       }
       else {
         float screenDimLerpVal = (float)screenDimTimer / (float)SCREEN_FADE_TIME;
-        setScreenDim((uint8_t)round(lerp(0.0, 254.0, screenDimLerpVal)));
+        if (screenDimLerpVal > 1.0) {
+          screenDimLerpVal = 1.0;
+        }
+        setScreenDim((uint8_t)round(lerp(255.0, 0.0, screenDimLerpVal)));
       }
     }
   }
